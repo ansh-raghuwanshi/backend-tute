@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./db/database.js";
+import { app } from "./app.js";
+import { error } from "console";
 
 // recreate __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -18,4 +20,13 @@ if (!process.env.MONGODB_URI) {
 }
 
 // connect to DB
-connectDB();
+connectDB()
+.then(()=>{
+  app.listen(process.env.PORT,(error)=>
+  {
+    console.log(`server is listining on port : ${process.env.PORT}`);
+  })
+})
+.catch((error)=>{
+  console.log("mongodb connection failed",error);
+})
