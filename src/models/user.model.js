@@ -89,6 +89,6 @@ userSchema.methods.generateRefreshTocken=function(){
     }
   )
 }
-userSchema.methods.generateRefreshTocken=function(){}
+
 
 export const User= mongoose.model("User",userSchema)
