@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./db/database.js";
 import { app } from "./app.js";
-import { error } from "console";
+
 
 // recreate __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
