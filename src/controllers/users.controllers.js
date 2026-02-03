@@ -1,7 +1,7 @@
 import {asyncHandler} from "../utils/asyncHandeler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
-import {uploadToColoudinary} from "../utils/cloudinary.js"
+import {uploadToCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 
 
@@ -29,7 +29,7 @@ const registerUser=asyncHandler(async(req,res)=>{
     }
 
     //check if user already exist : username,email
-    const userExist= User.findOne(    //(user)is imorted from user model which talk with db
+    const userExist= await User.findOne(    //(user)is imorted from user model which talk with db
         {
             $or :[{username},{email}]
         }
@@ -50,8 +50,8 @@ const registerUser=asyncHandler(async(req,res)=>{
     }
 
     //upload them to cloudnary
-    const avatar= await uploadToColoudinary(avatarLocalPath)
-    const coverImage= await uploadToColoudinary(coverImageLocalPath)
+    const avatar= await uploadToCloudinary(avatarLocalPath)
+    const coverImage= await uploadToCloudinary(coverImageLocalPath)
 
     if(!avatar)
     {

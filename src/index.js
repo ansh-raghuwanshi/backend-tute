@@ -1,23 +1,22 @@
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import connectDB from "./db/database.js";
-import { app } from "./app.js";
-
-
-// recreate __dirname for ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // load env ONCE
-dotenv.config({
-  path: path.resolve(__dirname, "../.env"),
+dotenv.config()
+console.log("ENV CHECK ", {
+  MONGO: process.env.MONGODB_URI,
+  CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUD_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUD_SECRET: process.env.CLOUDINARY_API_SECRET,
 });
 
 // fail fast if env missing
 if (!process.env.MONGODB_URI) {
   throw new Error("❌ MONGODB_URI not found. Check .env");
 }
+
+
+import connectDB from "./db/database.js";
+import { app } from "./app.js";
 
 // connect to DB
 connectDB()
