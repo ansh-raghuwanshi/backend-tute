@@ -3,6 +3,23 @@ import {ApiError} from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import {uploadToCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+import jwt from "jsonwebtoken"
+
+const generateRefreshAndAcessTocken=async(userId)=>{
+    try {
+        const user=await User.findById(userId)
+        const accessTocken=await user.generateAcessTocken()
+        const refreshTocken=await user.generateRefreshTocken()
+
+        user.refreshTocken=refreshTocken
+        await user.save({validateBeforeSave:false})
+        return{accessTocken,refreshTocken}
+        
+    } catch (error) {
+        throw new ApiError(500,"something went wrong while generating access tocken ")
+    }
+
+}
 
 
 const registerUser=asyncHandler(async(req,res)=>{
@@ -42,8 +59,12 @@ const registerUser=asyncHandler(async(req,res)=>{
 
     //check for images
     const avatarLocalPath=req.files?.avatar[0]?.path;
-    const coverImageLocalPath=req.files?.coverImage[0]?.path;
-
+    // const coverImageLocalPath=req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage)&& req.files.coverImage.length>0)
+    {
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
     if(!avatarLocalPath)
     {
         throw new ApiError(400,"avatar is required")
@@ -52,6 +73,7 @@ const registerUser=asyncHandler(async(req,res)=>{
     //upload them to cloudnary
     const avatar= await uploadToCloudinary(avatarLocalPath)
     const coverImage= await uploadToCloudinary(coverImageLocalPath)
+    
 
     if(!avatar)
     {
@@ -80,4 +102,117 @@ const registerUser=asyncHandler(async(req,res)=>{
     )
 
 })
-export {registerUser}
+
+const loginUser=asyncHandler(async(req,res)=>{
+    //algorithm
+    //req.body=>data
+    //find the user
+    //check the password
+    //provide access and refresh tockens
+
+    const{username,email,password}=req.body
+    if(!(username || email))
+    {
+        throw new ApiError(401,"email or username required")
+    }
+
+    const user=await User.findOne({
+        $or:[{username},{email}]
+    })
+    if(!user){
+        throw new ApiError(404,"user not found")
+    }
+    
+    const isPasswordValid=await user.isPasswordCorrect(password);
+    if(!isPasswordValid)
+    {
+        throw new ApiError(401,"wrong password")
+    }
+
+    const {accessTocken,refreshTocken}=await generateRefreshAndAcessTocken(user._id)
+    const logedinUser=await User.findById(user._id).select("-password -refreshTocken")
+
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .cookie("accessTocken",accessTocken,options)
+    .cookie("refreshTocken",refreshTocken,options)
+    .json(
+        new ApiResponse(200,{
+            user:logedinUser,accessTocken,refreshTocken
+        },"user loggedin sucessfully")
+    )
+})
+
+const logoutUser=asyncHandler(async(req,res)=>{
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshTocken: undefined
+            },
+            
+        },
+        {
+            new:true
+        }
+
+    )
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+    return res
+    .status(200)
+    .clearCookie("refreshTocken",options)
+    .clearCookie("accessTocken",options)
+    .json(new ApiResponse(200,{},"logged out succesfully"))
+
+})
+
+const refreshAcessTocken=asyncHandler(async(req,res)=>{
+    const incomingRefreshTocken=req.cookie.refreshTocken || req.body.accessTocken//if request is coming from the app(someone sending it)
+    if(!incomingRefreshTocken)
+    {
+        throw new ApiError(401,"unorthorized accesss")
+
+    }
+
+   const decodedTocken= jwt.verify(
+        incomingRefreshTocken,
+        process.env.REFRESH_TOCKEN_SECRET
+    )
+
+    const user= await User.findById(decodedTocken?._id)
+    if(!user)
+    {
+        throw new ApiError(401,"unorthorized")
+    }
+    if(incomingRefreshTocken!=user.refreshTocken){
+        throw new ApiError(401,"invalid refresh tocken")
+    }
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+    const{ accessTocken,newRefreshTocken}=await generateRefreshAndAcessTocken(user._id)
+    
+    return res
+    .status(201)
+    .cookie("refreshTocken",newRefreshTocken,options)
+    .cookie("accessTocken",accessTocken,options)
+    .json(
+        new ApiResponse(201,
+            {accessTocken,refreshTocken:newRefreshTocken},
+            "access tocken refreshed"
+        )
+    )
+
+
+
+})
+export {registerUser,loginUser,logoutUser,refreshAcessTocken}
