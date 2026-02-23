@@ -218,8 +218,9 @@ const refreshAcessTocken=asyncHandler(async(req,res)=>{
 
 const changePassword=asyncHandler(async(req,res)=>{
     const {oldPassword ,newPassword}=req.body
+    
     const user=await User.findById(req.user?._id)
-    const isPassCorect=await isPasswordCorrect(oldPassword) 
+    const isPassCorect=await user.isPasswordCorrect(oldPassword) 
     if(!isPassCorect){
         throw new ApiError(401,"old password doesent match ")
     }
@@ -240,13 +241,14 @@ const getCurrentUser=asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,req.user,"user fettched sucessfully"))
 })
 
+
 const updateUserDetail=asyncHandler(async(req,res)=>{
     const{fullname,email}=req.body
     if(!fullname || !email)
     {
         throw new ApiError(400,"all info is required to update details")
     }
-    const user=User.findByIdAndUpdate(req.user?._id,
+    const user=await User.findByIdAndUpdate(req.user?._id,
         {
             $set:{
                 fullname:fullname,
@@ -275,7 +277,7 @@ const updateUserAvtar=asyncHandler(async(req,res)=>{
     const user= await User.findByIdAndUpdate(req.user._id,
         {
             $set:{
-                avatar:avatar
+                avatar:avatar.secure_url
             }
         },
         {
@@ -301,7 +303,7 @@ const updateUserCover=asyncHandler(async(req,res)=>{
     const user= await User.findByIdAndUpdate(req.user._id,
         {
             $set:{
-                coverImage:coverImage
+                coverImage:coverImage.secure_url
             }
         },
         {

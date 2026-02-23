@@ -15,7 +15,7 @@ export const verifyJWT=asyncHandler(async(req,res,next)=>{
     }
     
     const decodedTocken=jwt.verify(tocken,process.env.ACESS_TOCKEN_SECRET)
-    const user=User.findById(decodedTocken?._id).select("-password -refreshTocken")
+    const user=await User.findById(decodedTocken?._id).select("-password -refreshTocken")
 
     if(!user){
       throw new ApiError(401,"invalid access tocken")
