@@ -1,8 +1,10 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
+
 const uploadToCloudinary = async (localFilePath) => {
-  if (
+  
+if (
     !process.env.CLOUDINARY_CLOUD_NAME ||
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET
@@ -10,11 +12,12 @@ const uploadToCloudinary = async (localFilePath) => {
     throw new Error("❌ Cloudinary env variables are missing");
   }
 
-  cloudinary.config({
+cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
+  
 
   try {
     if (!localFilePath) return null;
@@ -32,5 +35,10 @@ const uploadToCloudinary = async (localFilePath) => {
     throw error;
   }
 };
+const deleteFromCloudinary = async (public_id) => {
+  if (!public_id) return null;
 
-export { uploadToCloudinary };
+  return await cloudinary.uploader.destroy(public_id);
+};
+
+export { uploadToCloudinary , deleteFromCloudinary};
