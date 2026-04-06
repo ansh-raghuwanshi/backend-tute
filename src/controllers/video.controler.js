@@ -40,7 +40,7 @@ const publishAVideo=asyncHandler(async(req,res)=>{
     {
       title,
       description,
-      video:videoToUpload.url,
+      videoFile:videoToUpload.url,
       thumbnail:thumbnail?.url||"",
       owner: req.user._id
     }
@@ -171,7 +171,7 @@ const deleteVideo=asyncHandler(async(req,res)=>{
 
 
   const{videoId}=req.params;
-  if(!videoId)
+  if(!videoId) 
   {
     throw new ApiError(400,"videoId is required")
   }
@@ -230,9 +230,98 @@ const deleteVideo=asyncHandler(async(req,res)=>{
  
 })
 
+const toglePublishStatus=asyncHandler(async(req,res)=>{
+  /* 
+   1. Validate videoId
+2. Find video
+3. If not found → 404
+4. Check ownership → only owner can toggle
+5. Flip isPublished
+6. Save/update
+7. Return updated status
+  */
+  const{videoId}=req.params
+  if(!videoId)
+  {
+    throw new ApiError(400,"videoId is required")
+  }
+  if(!mongoose.Types.ObjectId.isValid(videoId))
+  {
+    throw new ApiError(400,"invalid videoId")
+  }
+  const video=await Video.findById(videoId)
+  if(!video)
+  {
+    throw new ApiError(404,"video not found")
+  }
+  if(video.owner.toString()!==req.user._id.toString())
+  {
+    throw new ApiError(403,"unothorized access")
+  }
+  video.isPublished=!video.isPublished
+  await video.save()
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,{isPublished:video.isPublished},"publish status toggled")
+  )
+
+})
+const getAllVideos = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+  // 1. Convert types
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+
+  // 2. Build filter
+  const filter = { isPublished: true };
+
+  if (query) {
+    filter.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } }
+    ];
+  }
+
+  if (userId) {
+    filter.owner = userId;
+  }
+
+  // 3. Build sort
+  const sortOptions = {};
+  const sortField = sortBy || "createdAt";
+  sortOptions[sortField] = sortType === "desc" ? -1 : 1;
+
+  // 4. Pagination
+  const skip = (pageNum - 1) * limitNum;
+
+  // 5. Fetch data
+  const videos = await Video.find(filter)
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limitNum);
+
+  // 6. Total count
+  const totalVideos = await Video.countDocuments(filter);
+
+  // 7. Response
+  return res.status(200).json(
+    new ApiResponse(200, {
+      videos,
+      page: pageNum,
+      totalPages: Math.ceil(totalVideos / limitNum),
+      totalVideos
+    }, "Videos fetched successfully")
+  );
+});
+
 export{
   publishAVideo,
   getVideoByID,
   updateVideo,
-  deleteVideo
+  deleteVideo,
+  toglePublishStatus,
+  getAllVideos
 }
