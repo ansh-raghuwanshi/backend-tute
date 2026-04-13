@@ -1,5 +1,5 @@
 import { asyncHandler } from "../utils/asyncHandeler";
-import like, { Like } from "../models/likes.models.js"
+import { Like } from "../models/likes.models.js"
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import mongoose from "mongoose";
