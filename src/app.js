@@ -17,6 +17,11 @@ app.use(express.urlencoded({extended: true, limit: "16kb"}))
 app.use(express.static("public"))
 app.use(cookieparser())
 
+// Health check route for root URL
+app.get('/', (req, res) => {
+  res.send('VTube Backend API is running!');
+});
+
 
 
 
