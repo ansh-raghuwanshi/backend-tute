@@ -1,9 +1,9 @@
-import { asyncHandler } from "../utils/asyncHandeler";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import SubscriptionService from "../services/subscription.service";
+import { asyncHandler } from "../utils/asyncHandeler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-import { Subscription } from "../models/subscription.models";
+import { Subscription } from "../models/subscription.models.js";
+import { User } from "../models/user.model.js";
 
 const  toggleSubscription =asyncHandler(async(req,res)=>{
   const {channelId} = req.params;
@@ -15,7 +15,7 @@ const  toggleSubscription =asyncHandler(async(req,res)=>{
   {
     throw new ApiError(400,"invalid channelId")
   }
-  const channel=await Subscription.findById(channelId)
+  const channel=await User.findById(channelId)
   if(!channel)
   {
     throw new ApiError(404,"channel not found")
@@ -55,7 +55,7 @@ const  getUserChannelSubscribers=asyncHandler(async(req,res)=>{
   {
     throw new ApiError(404,"channel not found")
   }
-  const subscribers=await Subscription.find({channel:channelId}).populate("subscriber","name email")
+  const subscribers=await Subscription.find({channel:channelId}).populate("subscriber","fullname username avatar")
 
   return res
   .status(200)
@@ -80,7 +80,7 @@ const getSubscribedChannels=asyncHandler(async(req,res)=>{
   {
     throw new ApiError(404,"subscriber not found")
   }
-  const channels=await Subscription.find({subscriber:subscriberId}).populate("channel","name email")
+  const channels=await Subscription.find({subscriber:subscriberId}).populate("channel","fullname username avatar")
   return res
   .status(200)
   .json(
@@ -93,4 +93,4 @@ const getSubscribedChannels=asyncHandler(async(req,res)=>{
 
 
 
-export default {toggleSubscription, getUserChannelSubscribers, getSubscribedChannels} 
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels } 

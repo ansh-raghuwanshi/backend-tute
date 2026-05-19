@@ -3,7 +3,9 @@ import { DB_NAME } from "../constants.js";
 
 const connectDB=async()=>{
   try {
-    const connectionInstence=await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
+    const connectionInstence=await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`, {
+      tlsAllowInvalidCertificates: true
+    });
     console.log(`/n db connected !! dbtest:${connectionInstence.connection.host}`);
     
   } catch (error) {

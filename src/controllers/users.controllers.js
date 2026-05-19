@@ -348,7 +348,7 @@ const getUserChanelProfile=asyncHandler(async(req,res)=>
             $lookup:{
                 from:"subscriptions",
                 localField:"_id",
-                foreignField:"chanel",
+                foreignField:"channel",
                 as:"subscribers"
             }
         },
@@ -366,7 +366,7 @@ const getUserChanelProfile=asyncHandler(async(req,res)=>
                 subscriberCount:{$size:"$subscribers"},
                 chanelSubscribedToCount:{$size:"$subscribedTo"},
                 isSubscribed:{
-                    cond:{
+                    $cond:{
                         if:{$in:[req.user?._id,"$subscribers.subscriber"]},
                         then:true,
                         else:false
@@ -412,7 +412,7 @@ const getWatchHistory=asyncHandler(async(req,res)=>{
         {
             $lookup:{
                 from:"videos",
-                localField:"watchHistoryt",
+                localField:"watchHistory",
                 foreignField:"_id",
                 as:"watchHistory",
                 pipeline:[
@@ -454,6 +454,21 @@ const getWatchHistory=asyncHandler(async(req,res)=>{
     
 })
 
+const addWatchHistory = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    if (!videoId) {
+        throw new ApiError(400, "videoId is required");
+    }
+
+    await User.findByIdAndUpdate(req.user._id, {
+        $addToSet: { watchHistory: videoId }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Video added to history successfully")
+    );
+});
+
 export {
     registerUser,
     loginUser,
@@ -465,5 +480,6 @@ export {
     updateUserAvtar,
     updateUserDetail,
     getUserChanelProfile,
-    getWatchHistory
-        }
+    getWatchHistory,
+    addWatchHistory
+}

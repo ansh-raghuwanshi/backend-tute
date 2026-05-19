@@ -1,10 +1,12 @@
-import { asyncHandler } from "../utils/asyncHandeler";
+import { asyncHandler } from "../utils/asyncHandeler.js";
 import mongoose from "mongoose";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { uploadToCloudinary,deleteFromCloudinary } from "../utils/cloudinary";
-import { User } from "../models/user.model";
-import { Video } from "../models/video.model";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { uploadToCloudinary,deleteFromCloudinary } from "../utils/cloudinary.js";
+import { User } from "../models/user.model.js";
+import { Video } from "../models/video.model.js";
+import { Comment } from "../models/comments.model.js";
+import { Like } from "../models/likes.models.js";
 
 
 const publishAVideo=asyncHandler(async(req,res)=>{
@@ -42,6 +44,7 @@ const publishAVideo=asyncHandler(async(req,res)=>{
       description,
       videoFile:videoToUpload.url,
       thumbnail:thumbnail?.url||"",
+      duration: videoToUpload.duration ? videoToUpload.duration.toString() : "0",
       owner: req.user._id
     }
   ) 
@@ -65,7 +68,9 @@ const getVideoByID=asyncHandler(async(req,res)=>{
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(400, "Invalid video ID")
 }
-  const video=await Video.findById(videoId)
+  const video=await Video.findByIdAndUpdate(videoId, {
+    $inc: { view: 1 }
+  }, { new: true }).populate('owner', 'username avatar fullname')
   if(!video)
   {
     throw new ApiError(404,"no video with this videoId")
@@ -222,6 +227,16 @@ const deleteVideo=asyncHandler(async(req,res)=>{
   
   await videoToBeDeleted.deleteOne()
 
+  // Cascade delete associated likes and comments
+  await Comment.deleteMany({ video: videoId });
+  await Like.deleteMany({ video: videoId });
+
+  // Remove video from all users' watch history
+  await User.updateMany(
+    { watchHistory: videoId },
+    { $pull: { watchHistory: videoId } }
+  );
+
   return res 
   .status(200)
   .json(
@@ -299,6 +314,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   // 5. Fetch data
   const videos = await Video.find(filter)
+    .populate('owner', 'username avatar fullname')
     .sort(sortOptions)
     .skip(skip)
     .limit(limitNum);

@@ -4,7 +4,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router=Router()
 
-router.route("/toggle").post(verifyJWT,toggleSubscription)
+router.route("/toggle/:channelId").post(verifyJWT,toggleSubscription)
 router.route("/channel/:channelId/subscribers").get(verifyJWT,getUserChannelSubscribers)
 router.route("/subscribed-channels/:subscriberId").get(verifyJWT,getSubscribedChannels)
 
