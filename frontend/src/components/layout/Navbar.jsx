@@ -11,6 +11,7 @@ export default function Navbar({ onMenuClick }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = () => {
+    localStorage.removeItem('accessToken');
     dispatch(logout());
     // Also call API to clear cookie
   };

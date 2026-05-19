@@ -33,6 +33,7 @@ function App() {
           dispatch(login(response.data.data));
         }
       } catch (error) {
+        localStorage.removeItem('accessToken');
         dispatch(logout());
       }
     };

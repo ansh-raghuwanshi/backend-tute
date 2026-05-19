@@ -17,7 +17,13 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await api.post('/users/login', { email, password });
-      dispatch(login(response.data.data.user));
+      
+      const { user, accessTocken } = response.data.data;
+      if (accessTocken) {
+        localStorage.setItem('accessToken', accessTocken);
+      }
+      
+      dispatch(login(user));
       toast.success('Logged in successfully!');
       navigate('/');
     } catch (error) {
