@@ -63,8 +63,10 @@ export default function VideoDetail() {
     }
     try {
       await api.post(`/likes/video/${id}/toggle`);
-      setIsLiked(!isLiked);
-      setLikes(prev => isLiked ? prev - 1 : prev + 1);
+      setIsLiked(prevIsLiked => {
+        setLikes(prevLikes => prevIsLiked ? Math.max(0, prevLikes - 1) : prevLikes + 1);
+        return !prevIsLiked;
+      });
     } catch (error) {
       toast.error('Failed to toggle like');
     }
